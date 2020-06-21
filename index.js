@@ -1,84 +1,57 @@
-const fetchData = async(searchTerm) => {
-    let s = searchTerm
-
-    const response = await axios.get("https://www.thesportsdb.com/api/v1/json/1/searchplayers.php?p=" + s)
-        
-  
-
-    return response.data.player
-};
-
-const root = document.querySelector(".autocomplete");
-root.innerHTML = `
-<label><b>Choose a player!</b></label>
-<input class="input" />
-<div class="dropdown">
-  <div class="dropdown-menu">
-    <div class="dropdown-content results"></div>
-  </div>
-</div>
-`;
-
-const input = document.querySelector("input");
-const dropdown = document.querySelector(".dropdown")
-const resultsWrapper = document.querySelector(".results")
-
-
-const onInput = async event => {
-    const players = await fetchData(event.target.value)
-
-   if(!players.length){
-     dropdown.classList.remove("is-active");
-     return;
-   } 
-
-resultsWrapper.innerHTML = " "
-dropdown.classList.add("is-active")
-
-
-for (let player of players){
-    if(player.strSport == "Basketball"){
-   
-
-    
+const autoCompleteConfig = {
+  renderOption(player) {
     const imgSrc = player.strThumb == null ? "" : player.strThumb;
-    const option = document.createElement("a");
-
-    option.classList.add("dropdown-item");
-    option.innerHTML = `
+    return `
     <img src="${imgSrc}" />
     ${player.strPlayer}
     `;
+  },
 
-  option.addEventListener("click", () => {
-    dropdown.classList.remove("is-active")
-    input.value = player.strPlayer
-    onPlayerSelect(player)
-  })
-
-    resultsWrapper.appendChild(option)
+inputValue(player){
+  console.log(player.strPlayer)
+  return player.strPlayer
+},
+async fetchData(searchTerm) {
+  const response = await axios.get("https://www.thesportsdb.com/api/v1/json/1/searchplayers.php?p=" + searchTerm)
+console.log(response.data.player)
+return response.data.player
 }
-}
+
 }
 
-input.addEventListener("input", debounce(onInput, 500))
+createAutoComplete({
+  ...autoCompleteConfig,
+  root: document.querySelector("#left-autocomplete"),
+  onOptionSelect(player){
+    document.querySelector(".tutorial").classList.add("is-hidden")
 
-document.addEventListener("click", event =>{
-  if (!root.contains(event.target)){
-    dropdown.classList.remove("is-active")
+    onPlayerSelect(player, document.querySelector("#left-summary"));
   }
-}
+
+});
+
+createAutoComplete({
+  ...autoCompleteConfig,
+  root: document.querySelector("#right-autocomplete"),
+  onOptionSelect(player){
+    document.querySelector(".tutorial").classList.add("is-hidden")
+
+    onPlayerSelect(player, document.querySelector("#right-summary"));
+  }
 
 
+});
 
-)
 
+const onPlayerSelect = async (player, summaryElement) => {
+  const response = await axios.get("https://www.thesportsdb.com/api/v1/json/1/searchplayers.php?p=" + player.strPlayer
 
-const onPlayerSelect = async player => {
-  const response = await axios.get("https://www.thesportsdb.com/api/v1/json/1/searchplayers.php?p=" + input.value)
-document.querySelector("#summary").innerHTML = playerTemplate(response.data)
-}
-;
+  )
+    
+
+console.log(player.strPlayer)
+summaryElement.innerHTML = playerTemplate(response.data)
+};
 
 const  playerTemplate = (player) => {
   console.log(player.player[0].strDescriptionEN.length)
